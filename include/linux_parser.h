@@ -28,6 +28,14 @@ int RunningProcesses();
 std::string OperatingSystem();
 std::string Kernel();
 
+enum ProcessCpuStates {
+  kUtime = 14,
+  kStime = 15,
+  kCutime = 16,
+  kCstime = 17,
+  kStarttime = 22
+};
+
 // CPU
 enum CPUStates {
   kUser_ = 0,
