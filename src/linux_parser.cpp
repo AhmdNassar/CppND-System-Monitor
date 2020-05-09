@@ -120,8 +120,48 @@ long LinuxParser::ActiveJiffies() { return 0; }
 // TODO: Read and return the number of idle jiffies for the system
 long LinuxParser::IdleJiffies() { return 0; }
 
+void LinuxParser::CpuUtHelper(float &Idle, float &Total) {
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  vector<string> keys{"user",   "nice", "system",  "idle",
+                      "iowait", "irq",  "softirq", "steal"};
+
+  std::map<string, float> values;
+  string line, cpu;
+  float value, NonIdle;
+
+  std::getline(stream, line);
+  std::istringstream linestream(line);
+
+  linestream >> cpu;  // cpu word
+  for (string key : keys) {
+    linestream >> value;
+    values[key] = value;
+  }
+
+  stream.close();
+
+  Idle = values["idle"] + values["iowait"];
+  NonIdle = values["user"] + values["nice"] + values["system"] + values["irq"] +
+            values["softirq"] + values["steal"];
+  Total = Idle + NonIdle;
+}
 // TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
+vector<float> LinuxParser::CpuUtilization() {
+  float totald, idled, PrevTotal, PrevIdle, Total, Idle;
+
+  CpuUtHelper(PrevIdle, PrevTotal);
+
+  sleep(1);
+
+  CpuUtHelper(Idle, Total);
+
+  // differentiate: actual value minus the previous one
+  totald = Total - PrevTotal;
+  idled = Idle - PrevIdle;
+  float CPU_Percentage = (totald - idled) / totald;
+  
+  return {CPU_Percentage};
+}
 
 // TODO: Read and return the total number of processes
 int LinuxParser::TotalProcesses() {
